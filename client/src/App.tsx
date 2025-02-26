@@ -13,8 +13,12 @@ import AnimePage from "@/pages/anime-page";
 import AdminPage from "@/pages/admin-page";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
+import { useNotifications } from "./hooks/use-notifications";
 
 function Router() {
+  // Ajouter le hook useNotifications ici pour activer les notifications en temps réel
+  useNotifications();
+
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />

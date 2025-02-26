@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { setupWebSocket } from "./websocket";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -50,14 +51,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.body.content,
     );
 
-    // Créer une notification pour l'auteur du post
+    // Créer une notification et l'envoyer en temps réel
     if (post && post.userId !== req.user!.id) {
-      await storage.createNotification(
+      const notification = await storage.createNotification(
         post.userId,
         "comment",
         `${req.user!.username} a commenté votre post`,
         postId
       );
+      app.locals.broadcastNotification(post.userId, notification);
     }
 
     // Award experience for commenting
@@ -170,5 +172,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   const httpServer = createServer(app);
+  setupWebSocket(httpServer, app);
   return httpServer;
 }
