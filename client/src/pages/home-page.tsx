@@ -42,6 +42,7 @@ export default function HomePage() {
           </TabsList>
 
           <TabsContent value="feed">
+            <StoryList />
             {/* Filtres */}
             <div className="flex gap-4 mb-8">
               <Select

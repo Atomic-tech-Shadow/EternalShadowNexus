@@ -206,6 +206,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(messages);
   });
 
+  // Stories
+  app.post("/api/stories", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+    
+    const story = await storage.createStory(
+      req.user!.id,
+      req.body.content,
+      req.body.imageUrl,
+      expiresAt
+    );
+    res.json(story);
+  });
+
+  app.get("/api/stories", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const stories = await storage.getStories();
+    res.json(stories);
+  });
+
+  app.post("/api/stories/:storyId/views", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.createStoryView(
+      parseInt(req.params.storyId),
+      req.user!.id
+    );
+    res.sendStatus(200);
+  });
+
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer, app);
