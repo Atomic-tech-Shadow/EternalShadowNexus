@@ -1,9 +1,4 @@
-import React, { createContext, useContext } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { User } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
-
-import { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -43,35 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     onSettled: () => setIsLoading(false),
     enabled: true,
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: async (data: { username: string; password: string }) => {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || "Login failed";
-        throw new Error(errorMessage);
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-    onSettled: () => setIsLoading(false),
   });
 
   const registerMutation = useMutation({
@@ -122,9 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSettled: () => setIsLoading(false),
   });
 
-
   return (
-    <AuthContext.Provider value={{ user: user || null, loginMutation, registerMutation, logoutMutation, isLoading, error }}>
+    <AuthContext.Provider value={{ user: user || null, loginMutation: null, registerMutation, logoutMutation, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );
