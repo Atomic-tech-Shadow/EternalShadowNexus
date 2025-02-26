@@ -6,6 +6,9 @@ import { Switch, Route } from "wouter";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
+import GroupsPage from "@/pages/groups-page";
+import BadgesPage from "@/pages/badges-page";
+import ProjectsPage from "@/pages/projects-page";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -15,6 +18,9 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/groups" component={GroupsPage} />
+      <ProtectedRoute path="/badges" component={BadgesPage} />
+      <ProtectedRoute path="/projects" component={ProjectsPage} />
       <Route component={NotFound} />
     </Switch>
   );
