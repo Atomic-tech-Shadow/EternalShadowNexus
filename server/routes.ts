@@ -186,6 +186,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(200);
   });
 
+  // Messages
+  app.post("/api/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const message = await storage.createMessage(
+      req.user!.id,
+      req.body.receiverId,
+      req.body.content
+    );
+    res.json(message);
+  });
+
+  app.get("/api/messages/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const messages = await storage.getMessages(
+      req.user!.id,
+      parseInt(req.params.userId)
+    );
+    res.json(messages);
+  });
+
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer, app);
