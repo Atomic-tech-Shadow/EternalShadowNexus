@@ -6,7 +6,8 @@ export function setupWebSocket(server: Server, app: Express) {
   const wss = new WebSocketServer({ 
     server,
     path: "/ws",
-    clientTracking: true
+    clientTracking: true,
+    perMessageDeflate: false
   });
 
   // Store active connections
