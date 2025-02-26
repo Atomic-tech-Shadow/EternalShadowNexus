@@ -45,11 +45,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const postId = parseInt(req.params.postId);
     const post = await storage.getPost(postId);
 
+    // Détecter les mentions (@username)
+    const mentions = req.body.content.match(/@(\w+)/g);
+    const mentionedUsers = mentions ? await storage.getUsersByUsernames(
+      mentions.map(m => m.substring(1))
+    ) : [];
+
     const comment = await storage.createComment(
       req.user!.id,
       postId,
       req.body.content,
     );
+
+    // Notifier les utilisateurs mentionnés
+    for (const user of mentionedUsers) {
+      await storage.createNotification(
+        user.id,
+        "mention",
+        `${req.user!.username} vous a mentionné dans un commentaire`,
+        comment.id
+      );
+    }
 
     // Créer une notification et l'envoyer en temps réel
     if (post && post.userId !== req.user!.id) {

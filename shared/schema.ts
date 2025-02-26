@@ -141,4 +141,16 @@ export type Like = typeof likes.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Badge = typeof badges.$inferSelect;
 export type Category = typeof categories.$inferSelect;
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const postTags = pgTable("post_tags", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  tagId: integer("tag_id").notNull(),
+});
+
 export type Notification = typeof notifications.$inferSelect;
+export type Tag = typeof tags.$inferSelect;
