@@ -9,6 +9,8 @@ import ProfilePage from "@/pages/profile-page";
 import GroupsPage from "@/pages/groups-page";
 import BadgesPage from "@/pages/badges-page";
 import ProjectsPage from "@/pages/projects-page";
+import AnimePage from "@/pages/anime-page";
+import AdminPage from "@/pages/admin-page";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -21,6 +23,8 @@ function Router() {
       <ProtectedRoute path="/groups" component={GroupsPage} />
       <ProtectedRoute path="/badges" component={BadgesPage} />
       <ProtectedRoute path="/projects" component={ProjectsPage} />
+      <ProtectedRoute path="/anime" component={AnimePage} />
+      <ProtectedRoute path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

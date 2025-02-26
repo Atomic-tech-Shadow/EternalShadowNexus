@@ -10,6 +10,11 @@ export const users = pgTable("users", {
   bio: text("bio"),
   level: integer("level").default(1).notNull(),
   experience: integer("experience").default(0).notNull(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  twitter: text("twitter"),
+  github: text("github"),
+  discord: text("discord"),
+  email: text("email"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -80,6 +85,15 @@ export const userBadges = pgTable("user_badges", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  profilePic: true,
+  bio: true,
+  level: true,
+  experience: true,
+  isAdmin: true,
+  twitter: true,
+  github: true,
+  discord: true,
+  email: true,
 });
 
 export const insertPostSchema = createInsertSchema(posts).pick({
