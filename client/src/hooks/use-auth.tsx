@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
