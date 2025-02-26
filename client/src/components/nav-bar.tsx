@@ -23,9 +23,9 @@ import {
   BookOpen,
   Code,
   Trophy,
-  Bell
 } from "lucide-react";
 import { useState } from "react";
+import { NotificationsDropdown } from "./notifications-dropdown";
 
 export function NavBar() {
   const { user, logoutMutation } = useAuth();
@@ -104,10 +104,7 @@ export function NavBar() {
             </Button>
 
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-primary rounded-full" />
-            </Button>
+            <NotificationsDropdown />
 
             {/* Menu profil */}
             <DropdownMenu>
@@ -128,6 +125,15 @@ export function NavBar() {
                     </Button>
                   </Link>
                 </DropdownMenuItem>
+                {user?.isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <Button variant="ghost" className="w-full justify-start">
+                        Administration
+                      </Button>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Déconnexion

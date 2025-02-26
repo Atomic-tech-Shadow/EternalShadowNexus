@@ -1,4 +1,4 @@
-import { User, Post, Comment, Like, InsertUser, Group, Badge, Category } from "@shared/schema";
+import { User, Post, Comment, Like, InsertUser, Group, Badge, Category, Notification } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -40,6 +40,12 @@ export interface IStorage {
   createCategory(name: string, type: 'anime' | 'tech', description?: string): Promise<Category>;
 
   getRecommendedPosts(categoryId?: number): Promise<(Post & { user: User })[]>;
+
+  // Notifications
+  createNotification(userId: number, type: string, content: string, relatedId: number): Promise<Notification>;
+  getNotifications(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<void>;
+  deleteNotification(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -53,6 +59,7 @@ export class MemStorage implements IStorage {
   private userBadges: Map<string, number>; // userId-badgeId -> earnedAt
   private groupMembers: Map<string, boolean>; // userId-groupId -> isAdmin
   private currentId: number;
+  private notifications: Map<number, Notification>;
   sessionStore: session.Store;
 
   constructor() {
@@ -66,6 +73,7 @@ export class MemStorage implements IStorage {
     this.userBadges = new Map();
     this.groupMembers = new Map();
     this.currentId = 1;
+    this.notifications = new Map();
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
@@ -274,6 +282,39 @@ export class MemStorage implements IStorage {
     return postsWithLikes
       .sort((a, b) => b.likeCount - a.likeCount)
       .map(({ likeCount, ...post }) => post);
+  }
+
+  async createNotification(userId: number, type: string, content: string, relatedId: number): Promise<Notification> {
+    const id = this.currentId++;
+    const notification: Notification = {
+      id,
+      userId,
+      type,
+      content,
+      relatedId,
+      read: false,
+      createdAt: new Date(),
+    };
+    this.notifications.set(id, notification);
+    return notification;
+  }
+
+  async getNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    const notification = this.notifications.get(id);
+    if (notification) {
+      notification.read = true;
+      this.notifications.set(id, notification);
+    }
+  }
+
+  async deleteNotification(id: number): Promise<void> {
+    this.notifications.delete(id);
   }
 }
 

@@ -81,6 +81,16 @@ export const userBadges = pgTable("user_badges", {
   earnedAt: timestamp("earned_at").defaultNow().notNull(),
 });
 
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(), // 'comment', 'like', 'group_invite'
+  content: text("content").notNull(),
+  read: boolean("read").default(false).notNull(),
+  relatedId: integer("related_id").notNull(), // ID du post, commentaire ou groupe concerné
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Schemas for insertions
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -114,6 +124,14 @@ export const insertGroupSchema = createInsertSchema(groups).pick({
   isPrivate: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  userId: true,
+  type: true,
+  content: true,
+  relatedId: true,
+});
+
+
 // Types for frontend
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -123,3 +141,4 @@ export type Like = typeof likes.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Badge = typeof badges.$inferSelect;
 export type Category = typeof categories.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;

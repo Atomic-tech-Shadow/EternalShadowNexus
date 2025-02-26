@@ -41,11 +41,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Comments
   app.post("/api/posts/:postId/comments", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    const postId = parseInt(req.params.postId);
+    const post = await storage.getPost(postId);
+
     const comment = await storage.createComment(
       req.user!.id,
-      parseInt(req.params.postId),
+      postId,
       req.body.content,
     );
+
+    // Créer une notification pour l'auteur du post
+    if (post && post.userId !== req.user!.id) {
+      await storage.createNotification(
+        post.userId,
+        "comment",
+        `${req.user!.username} a commenté votre post`,
+        postId
+      );
+    }
 
     // Award experience for commenting
     await storage.updateUserExperience(req.user!.id, 10);
@@ -61,13 +74,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Likes
   app.post("/api/posts/:postId/likes", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    const postId = parseInt(req.params.postId);
+    const post = await storage.getPost(postId);
+
     const liked = await storage.toggleLike(
       req.user!.id,
-      parseInt(req.params.postId),
+      postId,
     );
 
+    if (liked && post && post.userId !== req.user!.id) {
+      await storage.createNotification(
+        post.userId,
+        "like",
+        `${req.user!.username} a aimé votre post`,
+        postId
+      );
+    }
+
     if (liked) {
-      // Award experience for liking
       await storage.updateUserExperience(req.user!.id, 5);
     }
 
@@ -124,6 +148,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const badges = await storage.getUserBadges(parseInt(req.params.userId));
     res.json(badges);
   });
+
+  // Notifications
+  app.get("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const notifications = await storage.getNotifications(req.user!.id);
+    res.json(notifications);
+  });
+
+  app.post("/api/notifications/:id/read", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.markNotificationAsRead(parseInt(req.params.id));
+    res.sendStatus(200);
+  });
+
+  app.delete("/api/notifications/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.deleteNotification(parseInt(req.params.id));
+    res.sendStatus(200);
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;
