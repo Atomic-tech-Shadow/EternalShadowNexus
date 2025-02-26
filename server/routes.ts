@@ -3,6 +3,12 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { setupWebSocket } from "./websocket";
+import { Client } from "@replit/object-storage";
+import formidable from "formidable";
+import fs from "fs";
+import path from "path";
+
+const storageClient = new Client();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -236,6 +242,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(200);
   });
 
+
+  // Upload de fichiers
+  app.post("/api/upload", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const form = formidable({});
+    const [fields, files] = await form.parse(req);
+    const file = files.file?.[0];
+    
+    if (!file) return res.status(400).send("No file uploaded");
+
+    const fileExt = path.extname(file.originalFilename || "");
+    const fileName = `${Date.now()}${fileExt}`;
+    
+    try {
+      await storageClient.upload_file(fileName, file.filepath);
+      const url = await storageClient.get_signed_url(fileName);
+      
+      const media = await storage.createMediaFile(
+        req.user!.id,
+        fields.type?.[0] || "post",
+        url
+      );
+
+      res.json(media);
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).send("Upload failed");
+    }
+  });
 
   const httpServer = createServer(app);
   setupWebSocket(httpServer, app);

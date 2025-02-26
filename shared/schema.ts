@@ -147,6 +147,14 @@ export const storyViews = pgTable("story_views", {
   viewedAt: timestamp("viewed_at").defaultNow().notNull(),
 });
 
+export const mediaFiles = pgTable("media_files", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(), // 'profile', 'post', 'video'
+  url: text("url").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").notNull(),

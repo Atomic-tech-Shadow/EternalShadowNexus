@@ -68,15 +68,22 @@ export function EditProfileDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="profilePic">Photo de profil (URL)</Label>
-            <Input
-              id="profilePic"
-              value={profileData.profilePic}
-              onChange={(e) =>
-                setProfileData({ ...profileData, profilePic: e.target.value })
-              }
-              placeholder="https://example.com/photo.jpg"
-            />
+            <Label>Photo de profil</Label>
+            <div className="flex items-center gap-4">
+              <FileUpload
+                type="profile"
+                onUploadComplete={(url) =>
+                  setProfileData({ ...profileData, profilePic: url })
+                }
+              />
+              {profileData.profilePic && (
+                <img
+                  src={profileData.profilePic}
+                  alt="Profile"
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+              )}
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="bio">Bio</Label>
