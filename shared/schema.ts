@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -8,13 +8,25 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   profilePic: text("profile_pic"),
   bio: text("bio"),
+  level: integer("level").default(1).notNull(),
+  experience: integer("experience").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  type: text("type").notNull(), // 'anime' ou 'tech'
+  description: text("description"),
 });
 
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
+  categoryId: integer("category_id").notNull(),
   content: text("content").notNull(),
   imageUrl: text("image_url"),
+  isProject: boolean("is_project").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -32,6 +44,39 @@ export const likes = pgTable("likes", {
   userId: integer("user_id").notNull(),
 });
 
+export const groups = pgTable("groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  isPrivate: boolean("is_private").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const groupMembers = pgTable("group_members", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull(),
+  userId: integer("user_id").notNull(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
+export const badges = pgTable("badges", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  imageUrl: text("image_url").notNull(),
+  requirement: text("requirement").notNull(),
+});
+
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  badgeId: integer("badge_id").notNull(),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+});
+
+// Schemas for insertions
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -40,14 +85,27 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertPostSchema = createInsertSchema(posts).pick({
   content: true,
   imageUrl: true,
+  categoryId: true,
+  isProject: true,
 });
 
 export const insertCommentSchema = createInsertSchema(comments).pick({
   content: true,
 });
 
+export const insertGroupSchema = createInsertSchema(groups).pick({
+  name: true,
+  description: true,
+  imageUrl: true,
+  isPrivate: true,
+});
+
+// Types for frontend
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Like = typeof likes.$inferSelect;
+export type Group = typeof groups.$inferSelect;
+export type Badge = typeof badges.$inferSelect;
+export type Category = typeof categories.$inferSelect;

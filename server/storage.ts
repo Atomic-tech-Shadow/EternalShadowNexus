@@ -1,4 +1,4 @@
-import { User, Post, Comment, Like, InsertUser } from "@shared/schema";
+import { User, Post, Comment, Like, InsertUser, Group, Badge, Category } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -6,22 +6,38 @@ const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   sessionStore: session.Store;
-  
+
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+  updateUserExperience(userId: number, amount: number): Promise<User>;
+
   // Post operations
-  createPost(userId: number, content: string, imageUrl?: string): Promise<Post>;
-  getPosts(): Promise<(Post & { user: User })[]>;
+  createPost(userId: number, content: string, categoryId: number, imageUrl?: string, isProject?: boolean): Promise<Post>;
+  getPosts(categoryId?: number): Promise<(Post & { user: User })[]>;
   getPost(id: number): Promise<(Post & { user: User }) | undefined>;
-  
+
   // Social interactions
   createComment(userId: number, postId: number, content: string): Promise<Comment>;
   getComments(postId: number): Promise<(Comment & { user: User })[]>;
   toggleLike(userId: number, postId: number): Promise<boolean>;
   getLikes(postId: number): Promise<number>;
+
+  // Groups
+  createGroup(name: string, description: string, imageUrl?: string, isPrivate?: boolean): Promise<Group>;
+  getGroups(): Promise<Group[]>;
+  joinGroup(userId: number, groupId: number): Promise<void>;
+  leaveGroup(userId: number, groupId: number): Promise<void>;
+
+  // Badges
+  getBadges(): Promise<Badge[]>;
+  getUserBadges(userId: number): Promise<Badge[]>;
+  awardBadge(userId: number, badgeId: number): Promise<void>;
+
+  // Categories
+  getCategories(): Promise<Category[]>;
+  createCategory(name: string, type: 'anime' | 'tech', description?: string): Promise<Category>;
 }
 
 export class MemStorage implements IStorage {
@@ -29,6 +45,11 @@ export class MemStorage implements IStorage {
   private posts: Map<number, Post>;
   private comments: Map<number, Comment>;
   private likes: Map<number, Like>;
+  private groups: Map<number, Group>;
+  private badges: Map<number, Badge>;
+  private categories: Map<number, Category>;
+  private userBadges: Map<string, number>; // userId-badgeId -> earnedAt
+  private groupMembers: Map<string, boolean>; // userId-groupId -> isAdmin
   private currentId: number;
   sessionStore: session.Store;
 
@@ -37,10 +58,25 @@ export class MemStorage implements IStorage {
     this.posts = new Map();
     this.comments = new Map();
     this.likes = new Map();
+    this.groups = new Map();
+    this.badges = new Map();
+    this.categories = new Map();
+    this.userBadges = new Map();
+    this.groupMembers = new Map();
     this.currentId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
+
+    // Ajouter des catégories par défaut
+    this.initializeDefaultCategories();
+  }
+
+  private async initializeDefaultCategories() {
+    await this.createCategory("Anime & Manga", "anime", "Discussions sur les animes et mangas");
+    await this.createCategory("Développement Web", "tech", "Projets et discussions web");
+    await this.createCategory("Intelligence Artificielle", "tech", "IA et Machine Learning");
+    await this.createCategory("Cybersécurité", "tech", "Sécurité informatique");
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -60,21 +96,41 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async createPost(userId: number, content: string, imageUrl?: string): Promise<Post> {
+  async updateUserExperience(userId: number, amount: number): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    user.experience += amount;
+    // Level up logic (simplified)
+    if (user.experience >= user.level * 1000) {
+      user.level += 1;
+    }
+
+    this.users.set(userId, user);
+    return user;
+  }
+
+  async createPost(userId: number, content: string, categoryId: number, imageUrl?: string, isProject?: boolean): Promise<Post> {
     const id = this.currentId++;
     const post: Post = {
       id,
       userId,
       content,
+      categoryId,
       imageUrl: imageUrl || null,
+      isProject: isProject || false,
       createdAt: new Date(),
     };
     this.posts.set(id, post);
     return post;
   }
 
-  async getPosts(): Promise<(Post & { user: User })[]> {
-    return Array.from(this.posts.values())
+  async getPosts(categoryId?: number): Promise<(Post & { user: User })[]> {
+    let posts = Array.from(this.posts.values());
+    if (categoryId) {
+      posts = posts.filter(post => post.categoryId === categoryId);
+    }
+    return posts
       .map((post) => ({
         ...post,
         user: this.users.get(post.userId)!,
@@ -133,6 +189,64 @@ export class MemStorage implements IStorage {
     return Array.from(this.likes.values()).filter(
       (like) => like.postId === postId,
     ).length;
+  }
+
+  async createGroup(name: string, description: string, imageUrl?: string, isPrivate = false): Promise<Group> {
+    const id = this.currentId++;
+    const group: Group = {
+      id,
+      name,
+      description,
+      imageUrl: imageUrl || null,
+      isPrivate,
+      createdAt: new Date(),
+    };
+    this.groups.set(id, group);
+    return group;
+  }
+
+  async getGroups(): Promise<Group[]> {
+    return Array.from(this.groups.values());
+  }
+
+  async joinGroup(userId: number, groupId: number): Promise<void> {
+    this.groupMembers.set(`${userId}-${groupId}`, false);
+  }
+
+  async leaveGroup(userId: number, groupId: number): Promise<void> {
+    this.groupMembers.delete(`${userId}-${groupId}`);
+  }
+
+  async getBadges(): Promise<Badge[]> {
+    return Array.from(this.badges.values());
+  }
+
+  async getUserBadges(userId: number): Promise<Badge[]> {
+    const userBadgeIds = Array.from(this.userBadges.entries())
+      .filter(([key]) => key.startsWith(`${userId}-`))
+      .map(([key]) => parseInt(key.split('-')[1]));
+
+    return userBadgeIds.map(id => this.badges.get(id)!);
+  }
+
+  async awardBadge(userId: number, badgeId: number): Promise<void> {
+    this.userBadges.set(`${userId}-${badgeId}`, Date.now());
+  }
+
+  async getCategories(): Promise<Category[]> {
+    return Array.from(this.categories.values());
+  }
+
+  async createCategory(name: string, type: 'anime' | 'tech', description?: string): Promise<Category> {
+    const id = this.currentId++;
+    const category: Category = {
+      id,
+      name,
+      type,
+      description: description || null,
+    };
+    this.categories.set(id, category);
+    return category;
   }
 }
 
