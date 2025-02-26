@@ -13,7 +13,7 @@ interface AuthContextType {
   error: Error | null;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,13 +25,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["/api/user"],
     retry: false,
     onSettled: () => setIsLoading(false),
-    enabled: true,
   });
 
   const loginMutation = useMutation({
     mutationFn: async (data: { username: string; password: string }) => {
-      setIsLoading(true);
-      setError(null);
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,13 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         variant: "destructive",
       });
     },
-    onSettled: () => setIsLoading(false),
   });
 
   const registerMutation = useMutation({
     mutationFn: async (data: { username: string; password: string }) => {
-      setIsLoading(true);
-      setError(null);
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return response.json();
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    },
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
@@ -78,12 +75,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         variant: "destructive",
       });
     },
-    onSettled: () => setIsLoading(false),
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      setIsLoading(true);
       const response = await fetch("/api/logout", { method: "POST" });
       if (!response.ok) {
         throw new Error("Logout failed");
@@ -92,11 +87,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
     },
-    onSettled: () => setIsLoading(false),
   });
 
   return (
-    <AuthContext.Provider value={{ user: user || null, loginMutation, registerMutation, logoutMutation, isLoading, error }}>
+    <AuthContext.Provider value={{ 
+      user: user || null, 
+      loginMutation, 
+      registerMutation, 
+      logoutMutation, 
+      isLoading, 
+      error 
+    }}>
       {children}
     </AuthContext.Provider>
   );
