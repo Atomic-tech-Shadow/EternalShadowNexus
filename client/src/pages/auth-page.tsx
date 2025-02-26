@@ -128,6 +128,12 @@ export default function AuthPage() {
         </Card>
       </div>
       <div className="hidden lg:flex flex-col justify-center p-12 bg-primary/5">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold">Eternal Shadow Nexus</h1>
+          <p className="text-xl text-muted-foreground">
+            Rejoignez notre communauté d'anime et de technologie
+          </p>
+        </div>
         <h1 className="text-4xl font-bold mb-6">
           Connect with Fellow Enthusiasts
         </h1>
