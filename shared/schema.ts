@@ -131,6 +131,22 @@ export const insertNotificationSchema = createInsertSchema(notifications).pick({
   relatedId: true,
 });
 
+export const stories = pgTable("stories", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const storyViews = pgTable("story_views", {
+  id: serial("id").primaryKey(),
+  storyId: integer("story_id").notNull(),
+  userId: integer("user_id").notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+});
+
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
   senderId: integer("sender_id").notNull(),
