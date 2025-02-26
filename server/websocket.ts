@@ -5,7 +5,8 @@ import type { Express } from "express";
 export function setupWebSocket(server: Server, app: Express) {
   const wss = new WebSocketServer({ 
     server,
-    path: "/ws" // Définir un chemin spécifique pour WebSocket
+    path: "/ws",
+    clientTracking: true
   });
 
   // Store active connections
