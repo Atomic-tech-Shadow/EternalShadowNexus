@@ -66,6 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Registration successful",
+        description: "Welcome to Eternal Shadow Nexus!",
+      });
     },
     onError: (error: Error) => {
       toast({
