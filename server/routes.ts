@@ -9,6 +9,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Posts
   app.get("/api/posts", async (req, res) => {
     const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+    const recommended = req.query.recommended === "true";
+
+    // Si on demande des recommandations, on filtre en fonction de la catégorie
+    // et on ajoute un tri par popularité (likes)
+    if (recommended) {
+      const posts = await storage.getRecommendedPosts(categoryId);
+      return res.json(posts);
+    }
+
     const posts = await storage.getPosts(categoryId);
     res.json(posts);
   });

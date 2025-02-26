@@ -38,6 +38,8 @@ export interface IStorage {
   // Categories
   getCategories(): Promise<Category[]>;
   createCategory(name: string, type: 'anime' | 'tech', description?: string): Promise<Category>;
+
+  getRecommendedPosts(categoryId?: number): Promise<(Post & { user: User })[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -247,6 +249,31 @@ export class MemStorage implements IStorage {
     };
     this.categories.set(id, category);
     return category;
+  }
+
+  async getRecommendedPosts(categoryId?: number): Promise<(Post & { user: User })[]> {
+    // Dans cette implémentation simple, nous allons:
+    // 1. Filtrer par catégorie si spécifiée
+    // 2. Trier par nombre de likes
+    let posts = Array.from(this.posts.values());
+
+    if (categoryId) {
+      posts = posts.filter(post => post.categoryId === categoryId);
+    }
+
+    // Pour chaque post, compter les likes
+    const postsWithLikes = await Promise.all(
+      posts.map(async (post) => ({
+        ...post,
+        user: this.users.get(post.userId)!,
+        likeCount: await this.getLikes(post.id),
+      }))
+    );
+
+    // Trier par nombre de likes décroissant
+    return postsWithLikes
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .map(({ likeCount, ...post }) => post);
   }
 }
 

@@ -7,11 +7,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Post, User, Comment } from "@shared/schema";
-import { Heart, MessageSquare, Loader2 } from "lucide-react";
+import { Heart, MessageSquare, Share2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 export function PostCard({ post }: { post: Post & { user: User } }) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState("");
 
@@ -50,6 +52,27 @@ export function PostCard({ post }: { post: Post & { user: User } }) {
       setComment("");
     },
   });
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Post de ${post.user.username}`,
+          text: post.content,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error("Erreur lors du partage:", err);
+      }
+    } else {
+      // Copier le lien si le partage natif n'est pas disponible
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Lien copié",
+        description: "Le lien a été copié dans votre presse-papiers",
+      });
+    }
+  };
 
   return (
     <Card>
@@ -90,13 +113,21 @@ export function PostCard({ post }: { post: Post & { user: User } }) {
             <MessageSquare className="mr-2 h-4 w-4" />
             {comments?.length || 0}
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShare}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Partager
+          </Button>
         </div>
 
         {showComments && (
           <div className="space-y-4 w-full">
             <div className="flex gap-2">
               <Textarea
-                placeholder="Write a comment..."
+                placeholder="Écrire un commentaire..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -107,7 +138,7 @@ export function PostCard({ post }: { post: Post & { user: User } }) {
                 {commentMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Send"
+                  "Envoyer"
                 )}
               </Button>
             </div>
