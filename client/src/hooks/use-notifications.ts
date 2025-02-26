@@ -15,8 +15,9 @@ export function useNotifications() {
     let ws: WebSocket;
 
     const connect = () => {
-      // Utiliser le chemin spécifique pour WebSocket
-      ws = new WebSocket(`wss://${window.location.host}/ws`);
+      // Use secure WebSocket with the current protocol and host
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
       ws.onopen = () => {
         console.log("WebSocket connected");
